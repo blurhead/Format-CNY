@@ -4,3 +4,71 @@ import pandas as pd
 class Money(object):
     def __init__(self):
         pass
+
+
+# # 去掉括号和里面的内容
+# df.vals = df.vals.str.replace('\(.*\)|.*[~-]', '')
+# df.vals = df.vals.str.replace('[,，:：\s]', '')
+# df.vals = df.vals.str.replace('\.+|。+', '.')
+# 
+# # 中文数字格式化, 量级格式化
+# patterns = [
+#     ('零', '0'), ('一', '1'), ('二', '2'),
+#     ('三', '3'), ('四', '4'), ('五', '5'),
+#     ('六', '6'), ('七', '7'), ('八', '8'),
+#     ('九', '9'), ('壹', '1'), ('贰', '2'),
+#     ('叁', '3'), ('肆', '4'), ('伍', '5'),
+#     ('陆', '6'), ('柒', '7'), ('捌', '8'),
+#     ('玖', '9'), ('两', '2'), ('任', '7'),
+#     ('億', '亿'), ('萬', '万'), ('仟', '千'),
+#     ('佰', '百'), ('什', '十'), ('拾', '十'),
+#     ('million', '百万'), ('illion', '百万'),
+#     ('kw', '千万'), ('近', '1'),
+#     ('wan', '万'), ('krw', ''), ('w', '万'),
+#     ('几|多', ''), ('y人民币', '亿')
+# ]
+# for i, j in patterns:
+#     df.vals = df.vals.str.replace(i, j)
+# 
+# # 补全量级, eg: 3千4百5十3万 To 3千万4百万5十万3万
+# df.vals = df.vals.str.replace('千(?=[^万]+万)', '千万')
+# df.vals = df.vals.str.replace('百(?=[^万]+万)', '百万')
+# df.vals = df.vals.str.replace('十(?=[^万]+万)', '十万')
+# 
+# # 按顺序提取数字和字符, 格式化字符
+# regexp = '(?P<pattern>\d+\.?\d*[^\d\.]+)'
+# df_split = df.vals.str.extractall(regexp)
+# df_split['match'] = df_split.index.get_level_values('match')
+# df_split.index = df_split.index.get_level_values(0)
+# df = df.merge(df_split, left_index=True, right_index=True)
+# df['pattern'] = df['pattern'].str.replace('[^十百千万亿\d\.]|^\.$', '')
+# df['unit'] = df['pattern'].str.extract('([^\d\.]+)', expand=False)
+# df['number'] = df['pattern'].str.extract('(\d+\.?\d*)', expand=False)
+# 
+# # 中文数字转阿拉伯数字
+# patterns = [
+#     ('百亿', '10000000000'),
+#     ('十亿', '1000000000'),
+#     ('亿+', '100000000'),
+#     ('千万', '10000000'),
+#     ('百万', '1000000'),
+#     ('十万', '100000'),
+#     ('万+', '10000'),
+#     ('千', '1000'),
+#     ('百', '100'),
+#     ('十', '10'),
+# ]
+# for i, j in patterns:
+#     df.unit = df.unit.str.replace(i, j)
+# 
+# # 转换数据类型
+# df.fillna(1, inplace=True)
+# df[['unit', 'number']] = df[['unit', 'number']].astype(float)
+# 
+# # 初步计算金额
+# df['money'] = df.unit * df.number
+# 
+# # 分组求和并拼接需要的字段
+# money = df[['money', 'company_id', 'params']].groupby(
+#     ['company_id', 'params'], as_index=False).sum()
+# df = df[['company_id', 'params']].merge(money, on=['company_id', 'params'])
