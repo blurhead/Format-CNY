@@ -47,8 +47,7 @@ class MoneyProcess(object):
         self.data = self.data.str.replace('百(?=[^万亿]+万)', '百万')
         self.data = self.data.str.replace('十(?=[^万亿]+万)', '十万')
         
-        self.data = self.data.str.replace('(?=[^\d])十万', '1十万')
-        self.data = self.data.str.replace('(?=[^\d])十(?=[^万])', '1十')
+        self.data = self.data.str.replace('^十', '1十')
         
     def extract(self):
         """
