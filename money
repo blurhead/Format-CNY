@@ -1,72 +1,79 @@
+# -*- coding: utf-8 -*-
 """基于盖世汽车网企业注册资金等中文货币的处理方法"""
-import pandas as pd
 
 
 class MoneyProcess(object):
     """
     处理万亿以内的中文货币, 默认为人民币
     """
+
     def __init__(self, data):
         """
-        type: data: pandas.core.series.Series
+        :type data: pandas.core.series.Series
+        传入一个Series, 初始化
         """
         self.data = data
-        
+
     def preprocess(self):
         """
         1. 替换掉括号里面的内容和破折号前面的内容.
         2. 替换掉空白符和中英文的逗号和冒号
         3. 多个中英文句号替换为一个
+        结果保存为Series.
         """
-        self.data = self.data.str.replace('\(.*\)|.*[~-]', '')   
-        self.data = self.data.str.replace('[,，:：\s]', '')  
-        self.data = self.data.str.replace('\.+|。+', '.')  
-        
+        self.data = self.data.str.replace('\(.*\)|.*[~-]', '')
+        self.data = self.data.str.replace('[,，:：\s]', '')
+        self.data = self.data.str.replace('\.+|。+', '.')
+
     def to_number(self):
-        # 中文数字替换为阿拉伯数字, 包括简繁体
+        """
+        中文数字替换为阿拉伯数字, 包括简繁体, 结果保存为Series.
+        """
         patterns = [
-        ('零', '0'), ('一', '1'), ('二', '2'),
-        ('三', '3'), ('四', '4'), ('五', '5'),
-        ('六', '6'), ('七', '7'), ('八', '8'),
-        ('九', '9'), ('壹', '1'), ('贰', '2'),
-        ('叁', '3'), ('肆', '4'), ('伍', '5'),
-        ('陆', '6'), ('柒', '7'), ('捌', '8'),
-        ('玖', '9'), ('两', '2'), ('任', '7'),
+            ('零', '0'), ('一', '1'), ('二', '2'),
+            ('三', '3'), ('四', '4'), ('五', '5'),
+            ('六', '6'), ('七', '7'), ('八', '8'),
+            ('九', '9'), ('壹', '1'), ('贰', '2'),
+            ('叁', '3'), ('肆', '4'), ('伍', '5'),
+            ('陆', '6'), ('柒', '7'), ('捌', '8'),
+            ('玖', '9'), ('两', '2'),
         ]
         for i, j in patterns:
             self.data = self.data.str.replace(i, j)
-        
-        
+
     def fill_unit(self):
-        # 补全量级
+        """
+        补全量级
+        """
         self.data = self.data.str.replace('千(?=[^亿]+亿)', '千亿')
         self.data = self.data.str.replace('百(?=[^亿]+亿)', '百亿')
-        self.data = self.data.str.replace('十(?=[^亿]+亿)', '十亿')   
-        
+        self.data = self.data.str.replace('十(?=[^亿]+亿)', '十亿')
+
         self.data = self.data.str.replace('千(?=[^万亿]+万)', '千万')
         self.data = self.data.str.replace('百(?=[^万亿]+万)', '百万')
         self.data = self.data.str.replace('十(?=[^万亿]+万)', '十万')
-        
+
         self.data = self.data.str.replace('^十', '1十')
-        
+
     def extract(self):
         """
-        提取用中文分割的数字加中文量级的模式, 返回一个DataFrame.
+        提取用中文分割的数字加中文量级的模式, 结果保存为DataFrame.
         """
-        
+
         regexp = '(?P<match>\d+\.?\d*[^\d\.]*)'
         temp = self.data.str.extractall(regexp)
         temp.index = temp.index.get_level_values(0)
-        
 
         temp['match'] = temp['match'].str.replace('[^十百千万亿\d\.]|^\.$', '')
         temp['unit'] = temp['match'].str.extract('([^\d\.]+)', expand=False)
         temp['number'] = temp['match'].str.extract('(\d+\.?\d*)', expand=False)
-        
-        
-        self.data = temp[['unit','number']]
-        
+
+        self.data = temp[['unit', 'number']]
+
     def unit_to_num(self):
+        """
+        量级转阿拉伯数字,结果保存为DataFrame.
+        """
         patterns = [
             ('千亿', '100000000000'),
             ('百亿', '10000000000'),
@@ -82,12 +89,14 @@ class MoneyProcess(object):
         ]
         for i, j in patterns:
             self.data['unit'] = self.data['unit'].replace(i, j)
-    
+
     def compute(self):
+        """分组求和, 结果保存为Series."""
         self.data['unit'].fillna(1, inplace=True)
         self.data = self.data.astype(float)
         self.data = self.data.unit * self.data.number
         self.data = self.data.groupby(level=0).sum()
-    
+
     def result(self):
+        """返回处理过的Series"""
         return self.data
